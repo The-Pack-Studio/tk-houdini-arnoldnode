@@ -12,6 +12,7 @@
 import os
 import sys
 import re
+import shutil
 
 # houdini
 import hou
@@ -80,6 +81,9 @@ class TkArnoldNodeHandler(object):
         "sgtk_ar_picture": "ar_picture",
     }
     """Map tk parms to arnold node parms."""
+
+    TK_DEFAULT_AOV = "RGBA"
+    """Default aov used to create template."""
 
     ############################################################################
     # Class methods
@@ -165,7 +169,6 @@ class TkArnoldNodeHandler(object):
 
             app.log_debug("Converted: Arnold node '%s' to TK Arnold node."
                 % (arnold_node_name,))
-
 
     @classmethod
     def convert_to_regular_arnold_nodes(cls, app):
@@ -560,6 +563,68 @@ class TkArnoldNodeHandler(object):
             path_parm.set("Disabled")
             path_parm.lock(True)
 
+    # write backup file
+    def create_backup_file(self, node):
+        backup_path = self._compute_backup_output_path(node)
+        
+        # Create dir if it doesn't exist
+        backup_dir_path = os.path.dirname(backup_path)
+        if not os.path.exists(backup_dir_path):
+            os.makedirs(backup_dir_path)
+
+        # write backup hip
+        hou.hipFile.save(file_name=None, save_to_recent_files=True)
+
+        shutil.copy2(hou.hipFile.path(), backup_path)
+        self._app.log_debug("Created backup file for %s" % node.name())
+
+    def auto_publish(self, node):
+        # Publish cache
+        cache_path = path = self._compute_output_path(node, "output_render_template", self.TK_DEFAULT_AOV)
+        version = node.parm('ver').evalAsInt()
+
+        sgtk.util.register_publish(self._app.sgtk, self._app.context, cache_path, node.name(), published_file_type="Rendered Image", version_number=version)
+
+        # Publish backup hip file
+        backup_path = self._compute_backup_output_path(node)
+        sgtk.util.register_publish(self._app.sgtk, self._app.context, backup_path, node.name(), published_file_type="Backup File", version_number=version)
+
+    def auto_version(self, node):
+        # get relevant fields from the current file path
+        work_file_fields = self._get_hipfile_fields()
+
+        output_profile = self._get_output_profile(node)
+        output_cache_template = self._app.get_template_by_name(
+            output_profile["output_render_template"])
+
+        # create fields dict with all the metadata
+        fields = {
+            "name": work_file_fields.get("name", None),
+            "node": node.name(),
+            "renderpass": node.name(),
+            "SEQ": "FORMAT: $F",
+            "aov_name": self.TK_DEFAULT_AOV
+        } 
+
+        fields.update(self._app.context.as_template_fields(
+            output_cache_template))
+
+        max_version = 0
+        for caches in self._app.sgtk.abstract_paths_from_template(output_cache_template, fields):
+            fields = output_cache_template.get_fields(caches)
+            if fields['version'] > max_version:
+                max_version = fields['version']
+        
+        node.parm('ver').set(max_version + 1)
+
+        # Create folder to 'reserve' cache version
+        path = self._compute_output_path(node, "output_render_template", self.TK_DEFAULT_AOV)
+        
+        if path:
+            dir_path = os.path.dirname(path)
+            
+            if not os.path.exists(path):
+                os.makedirs(dir_path)
 
     ############################################################################
     # Private methods
@@ -584,6 +649,35 @@ class TkArnoldNodeHandler(object):
         node.parm(parm_name).lock(False)
         node.parm(parm_name).set(path)
         node.parm(parm_name).lock(True)
+
+
+    # compute the output path based on the current work file and backup template
+    def _compute_backup_output_path(self, node):
+        # get relevant fields from the current file path
+        work_file_fields = self._get_hipfile_fields()
+
+        if not work_file_fields:
+            msg = "This Houdini file is not a Shotgun Toolkit work file!"
+            raise sgtk.TankError(msg)
+
+        output_profile = self._get_output_profile(node)
+        output_cache_template = self._app.get_template_by_name(
+                        output_profile["output_backup_render_template"])
+
+        # create fields dict with all the metadata
+        fields = {
+            "name": work_file_fields.get("name", None),
+            "node": node.name(),
+            "version": node.parm('ver').evalAsInt(),
+        }
+
+        fields.update(self._app.context.as_template_fields(
+            output_cache_template))
+
+        path = output_cache_template.apply_fields(fields)
+        path = path.replace(os.path.sep, "/")
+
+        return path
 
 
     def _compute_output_path(self, node, template_name, aov_name=None):
@@ -612,9 +706,8 @@ class TkArnoldNodeHandler(object):
         fields = {
             "name": work_file_fields.get("name", None),
             "node": node.name(),
-            "renderpass": node.name(),
             "SEQ": "FORMAT: $F",
-            "version": work_file_fields.get("version", None),
+            "version": node.parm('ver').evalAsInt(),
         } 
 
         # use %V - full view printout as default for the eye field

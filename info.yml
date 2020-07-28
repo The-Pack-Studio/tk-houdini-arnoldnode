@@ -63,6 +63,13 @@ configuration:
                         Primary arnold render output path template name.
                     fields: context, version, SEQ, [aov_name], [name], [eye], *
 
+                output_backup_render_template:
+                    type: template
+                    description: > 
+                        A reference to a template which defines where the
+                        backup hip file will be written to disk.
+                    fields: context, version, [houdini.node], [name], *
+
                 output_ifd_template:
                     type: template
                     description: IFD output path template name.
