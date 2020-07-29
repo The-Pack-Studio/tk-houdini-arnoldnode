@@ -75,13 +75,6 @@ configuration:
                     description: IFD output path template name.
                     fields: context, version, [SEQ], [aov_name], [name], [eye], *
 
-                output_extra_plane_template:
-                    type: template
-                    description: >
-                        Extra image plane (deep rasters) output path template
-                        name.
-                    fields: context, version, SEQ, [aov_name], [name], [eye], *
-
 
 # the Shotgun fields that this app needs in order to operate correctly
 requires_shotgun_fields:

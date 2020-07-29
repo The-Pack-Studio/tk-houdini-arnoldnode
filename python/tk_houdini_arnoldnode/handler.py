@@ -38,7 +38,7 @@ class TkArnoldNodeHandler(object):
     """Parameter that stores the number of aov planes."""
 
     TK_EXTRA_PLANE_TEMPLATE_MAPPING = {
-        "sgtk_ar_aov_separate_file#": "output_extra_plane_template"
+        "sgtk_ar_aov_separate_file#": "output_render_template"
     }
     """Maps additional plane parameter names to output template names"""
 
@@ -708,6 +708,7 @@ class TkArnoldNodeHandler(object):
             "node": node.name(),
             "SEQ": "FORMAT: $F",
             "version": node.parm('ver').evalAsInt(),
+            "aov_name": self.TK_DEFAULT_AOV
         } 
 
         # use %V - full view printout as default for the eye field
