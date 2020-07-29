@@ -61,7 +61,7 @@ class TkArnoldNodeHandler(object):
     """The key in the user data that stores the output profile name."""
 
     TK_RENDER_TEMPLATE_MAPPING = {
-        "sgtk_ass_diskfile": "output_ifd_template",
+        "sgtk_ass_diskfile": "output_ass_template",
         "sgtk_ar_filename": "output_render_template",
     }
     """Mapping between tk arnold parms and corresponding render templates."""

@@ -70,7 +70,7 @@ configuration:
                         backup hip file will be written to disk.
                     fields: context, version, [houdini.node], [name], *
 
-                output_ifd_template:
+                output_ass_template:
                     type: template
                     description: IFD output path template name.
                     fields: context, version, [SEQ], [aov_name], [name], [eye], *
