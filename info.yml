@@ -61,19 +61,19 @@ configuration:
                     type: template
                     description: > 
                         Primary arnold render output path template name.
-                    fields: context, version, SEQ, [aov_name], [name], [eye], *
+                    fields: context, version, SEQ, [AOV], [name], [eye], *
 
                 output_backup_render_template:
                     type: template
                     description: > 
                         A reference to a template which defines where the
                         backup hip file will be written to disk.
-                    fields: context, version, [houdini.node], [name], *
+                    fields: context, version, [RenderLayer], [name], *
 
                 output_ass_template:
                     type: template
                     description: IFD output path template name.
-                    fields: context, version, [SEQ], [aov_name], [name], [eye], *
+                    fields: context, version, [SEQ], [AOV], [name], [eye], *
 
 
 # the Shotgun fields that this app needs in order to operate correctly

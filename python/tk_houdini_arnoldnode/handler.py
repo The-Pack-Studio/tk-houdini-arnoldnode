@@ -600,10 +600,10 @@ class TkArnoldNodeHandler(object):
         # create fields dict with all the metadata
         fields = {
             "name": work_file_fields.get("name", None),
-            "node": node.name(),
+            "RenderLayer": node.name(),
             "renderpass": node.name(),
             "SEQ": "FORMAT: $F",
-            "aov_name": self.TK_DEFAULT_AOV
+            "AOV": self.TK_DEFAULT_AOV
         } 
 
         fields.update(self._app.context.as_template_fields(
@@ -667,7 +667,7 @@ class TkArnoldNodeHandler(object):
         # create fields dict with all the metadata
         fields = {
             "name": work_file_fields.get("name", None),
-            "node": node.name(),
+            "RenderLayer": node.name(),
             "version": node.parm('ver').evalAsInt(),
         }
 
@@ -705,10 +705,10 @@ class TkArnoldNodeHandler(object):
         # create fields dict with all the metadata
         fields = {
             "name": work_file_fields.get("name", None),
-            "node": node.name(),
+            "RenderLayer": node.name(),
             "SEQ": "FORMAT: $F",
             "version": node.parm('ver').evalAsInt(),
-            "aov_name": self.TK_DEFAULT_AOV
+            "AOV": self.TK_DEFAULT_AOV
         } 
 
         # use %V - full view printout as default for the eye field
