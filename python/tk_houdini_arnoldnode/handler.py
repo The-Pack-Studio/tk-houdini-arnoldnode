@@ -602,6 +602,7 @@ class TkArnoldNodeHandler(object):
             "name": work_file_fields.get("name", None),
             "RenderLayer": node.name(),
             "renderpass": node.name(),
+            "Camera": node.parm("camera").evalAsString().split('/')[-1],
             "SEQ": "FORMAT: $F",
             "AOV": self.TK_DEFAULT_AOV
         } 
@@ -669,6 +670,7 @@ class TkArnoldNodeHandler(object):
             "name": work_file_fields.get("name", None),
             "RenderLayer": node.name(),
             "version": node.parm('ver').evalAsInt(),
+            "Camera": node.parm("camera").evalAsString().split('/')[-1],
         }
 
         fields.update(self._app.context.as_template_fields(
@@ -705,7 +707,9 @@ class TkArnoldNodeHandler(object):
         # create fields dict with all the metadata
         fields = {
             "name": work_file_fields.get("name", None),
+            "Step": work_file_fields.get("Step", None),
             "RenderLayer": node.name(),
+            "Camera": node.parm("camera").evalAsString().split('/')[-1],
             "SEQ": "FORMAT: $F",
             "version": node.parm('ver').evalAsInt(),
             "AOV": self.TK_DEFAULT_AOV
