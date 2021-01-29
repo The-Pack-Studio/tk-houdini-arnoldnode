@@ -668,9 +668,9 @@ class TkArnoldNodeHandler(object):
         # create fields dict with all the metadata
         fields = {
             "name": work_file_fields.get("name", None),
-            "RenderLayer": node.name(),
+            "RenderLayer": node.name().replace('_', ''),
             "version": node.parm('ver').evalAsInt(),
-            "Camera": node.parm("camera").evalAsString().split('/')[-1],
+            "Camera": node.parm("camera").evalAsString().split('/')[-1].replace('_', ''),
         }
 
         fields.update(self._app.context.as_template_fields(
@@ -708,8 +708,8 @@ class TkArnoldNodeHandler(object):
         fields = {
             "name": work_file_fields.get("name", None),
             "Step": work_file_fields.get("Step", None),
-            "RenderLayer": node.name(),
-            "Camera": node.parm("camera").evalAsString().split('/')[-1],
+            "RenderLayer": node.name().replace('_', ''),
+            "Camera": node.parm("camera").evalAsString().split('/')[-1].replace('_', ''),
             "SEQ": "FORMAT: $F",
             "version": node.parm('ver').evalAsInt(),
             "AOV": self.TK_DEFAULT_AOV
