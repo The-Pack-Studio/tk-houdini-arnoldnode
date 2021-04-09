@@ -602,7 +602,7 @@ class TkArnoldNodeHandler(object):
             "name": work_file_fields.get("name", None),
             "RenderLayer": node.name(),
             "renderpass": node.name(),
-            "Camera": node.parm("camera").evalAsString().split('/')[-1],
+            "Camera": node.parm("camera").evalAsString().split('/')[-1].replace('_', ''),
             "SEQ": "FORMAT: $F",
             "AOV": self.TK_DEFAULT_AOV
         } 
@@ -611,8 +611,8 @@ class TkArnoldNodeHandler(object):
             output_cache_template))
 
         max_version = 0
-        for caches in self._app.sgtk.abstract_paths_from_template(output_cache_template, fields):
-            fields = output_cache_template.get_fields(caches)
+        for cache in self._app.sgtk.abstract_paths_from_template(output_cache_template, fields):
+            fields = output_cache_template.get_fields(cache)
             if fields['version'] > max_version:
                 max_version = fields['version']
         
