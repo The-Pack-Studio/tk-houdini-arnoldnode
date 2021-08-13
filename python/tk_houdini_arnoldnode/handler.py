@@ -719,7 +719,7 @@ class TkArnoldNodeHandler(object):
         fields["eye"] = "%V"
 
         if aov_name:
-            fields["aov_name"] = aov_name
+            fields["AOV"] = aov_name
 
         fields.update(self._app.context.as_template_fields(output_template))
 
