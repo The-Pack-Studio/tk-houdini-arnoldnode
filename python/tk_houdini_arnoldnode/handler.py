@@ -579,15 +579,45 @@ class TkArnoldNodeHandler(object):
         self._app.log_debug("Created backup file for %s" % node.name())
 
     def auto_publish(self, node):
-        # Publish cache
-        cache_path = path = self._compute_output_path(node, "output_render_template", self.TK_DEFAULT_AOV)
-        version = node.parm('ver').evalAsInt()
+        # Recalculate all render passes
+        self.reset_render_path(node)
 
-        sgtk.util.register_publish(self._app.sgtk, self._app.context, cache_path, node.name(), published_file_type="Rendered Image", version_number=version)
+        # Publish beauty pass
+        cache_path = self._compute_output_path(node, "output_render_template", self.TK_DEFAULT_AOV)
+        
+        # check if it already exists
+        publishes = sgtk.util.find_publish(self._app.sgtk, [cache_path])
+        
+        if len(publishes.keys()) == 0:
+            # get caches in scene, only standins and aivolumes as it is a render
+            refs = []
+            for n in hou.node("/obj").allSubChildren(recurse_in_locked_nodes=False):
+                if n.type().name() in ['arnold_procedural', 'arnold_volume']:
+                    hou_path = n.parm("ar_filename").eval().replace("/", os.path.sep)
 
-        # Publish backup hip file
-        backup_path = self._compute_backup_output_path(node)
-        sgtk.util.register_publish(self._app.sgtk, self._app.context, backup_path, node.name(), published_file_type="Backup File", version_number=version)
+                    if hou_path:
+                        refs.append(hou_path)
+
+            version = node.parm('ver').evalAsInt()
+
+            # Publish backup hip file
+            backup_path = self._compute_backup_output_path(node)
+            sgtk.util.register_publish(self._app.sgtk, self._app.context, backup_path, node.name(), published_file_type="Backup File", version_number=version, dependency_paths=refs, created_by=self._app.context.user)
+
+            # Publish beauty
+            self._app.log_info(backup_path)
+            sgtk.util.register_publish(self._app.sgtk, self._app.context, cache_path, node.name(), published_file_type="Rendered Image Beauty", version_number=version, dependency_paths=[backup_path], created_by=self._app.context.user)
+
+            # Publish render passes
+            for parm in node.parm('ar_aovs').multiParmInstances():
+                if 'sgtk_ar_aov_separate_file' in parm.name():
+                    index = re.findall(r'\d+', parm.name())[-1]
+
+                    if node.parm('ar_enable_aov{}'.format(index)).evalAsInt() \
+                        and node.parm('ar_aov_label{}'.format(index)).evalAsString()\
+                        and node.parm('ar_aov_separate{}'.format(index)).evalAsInt():
+                        path = parm.evalAsString()
+                        sgtk.util.register_publish(self._app.sgtk, self._app.context, path, node.name(), published_file_type="Rendered Image AOV", version_number=version, dependency_paths=[backup_path], created_by=self._app.context.user)
 
     def auto_version(self, node):
         # get relevant fields from the current file path
@@ -600,16 +630,15 @@ class TkArnoldNodeHandler(object):
         # create fields dict with all the metadata
         fields = {
             "name": work_file_fields.get("name", None),
-            "RenderLayer": node.name(),
-            "renderpass": node.name(),
+            "RenderLayer": node.name().replace('_', ''),
             "Camera": node.parm("camera").evalAsString().split('/')[-1].replace('_', ''),
             "SEQ": "FORMAT: $F",
             "AOV": self.TK_DEFAULT_AOV
-        } 
+        }
 
         fields.update(self._app.context.as_template_fields(
             output_cache_template))
-
+        
         max_version = 0
         for cache in self._app.sgtk.abstract_paths_from_template(output_cache_template, fields):
             fields = output_cache_template.get_fields(cache)
@@ -624,7 +653,7 @@ class TkArnoldNodeHandler(object):
         if path:
             dir_path = os.path.dirname(path)
             
-            if not os.path.exists(path):
+            if not os.path.exists(dir_path):
                 os.makedirs(dir_path)
 
     ############################################################################
