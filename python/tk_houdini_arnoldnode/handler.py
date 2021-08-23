@@ -605,7 +605,6 @@ class TkArnoldNodeHandler(object):
             sgtk.util.register_publish(self._app.sgtk, self._app.context, backup_path, node.name(), published_file_type="Backup File", version_number=version, dependency_paths=refs, created_by=self._app.context.user)
 
             # Publish beauty
-            self._app.log_info(backup_path)
             sgtk.util.register_publish(self._app.sgtk, self._app.context, cache_path, node.name(), published_file_type="Rendered Image Beauty", version_number=version, dependency_paths=[backup_path], created_by=self._app.context.user)
 
             # Publish render passes
