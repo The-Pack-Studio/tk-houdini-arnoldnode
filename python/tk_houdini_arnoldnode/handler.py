@@ -578,6 +578,17 @@ class TkArnoldNodeHandler(object):
         shutil.copy2(hou.hipFile.path(), backup_path)
         self._app.log_debug("Created backup file for %s" % node.name())
 
+
+    def get_backup_file(self, node):
+        backup_path = self._compute_backup_output_path(node)
+
+        # check if backup file exists
+        if os.path.exists(backup_path):
+            return backup_path
+        else:
+            self._app.log_warning("Could not find backup hip file for %s" % node.path())
+
+
     def auto_publish(self, node):
         # Recalculate all render passes
         self.reset_render_path(node)
@@ -620,7 +631,7 @@ class TkArnoldNodeHandler(object):
 
     def auto_version(self, node):
         # get relevant fields from the current file path
-        work_file_fields = self._get_hipfile_fields()
+        work_file_fields = self._get_hipfile_fields(node)
 
         output_profile = self._get_output_profile(node)
         output_cache_template = self._app.get_template_by_name(
@@ -683,7 +694,7 @@ class TkArnoldNodeHandler(object):
     # compute the output path based on the current work file and backup template
     def _compute_backup_output_path(self, node):
         # get relevant fields from the current file path
-        work_file_fields = self._get_hipfile_fields()
+        work_file_fields = self._get_hipfile_fields(node)
 
         if not work_file_fields:
             msg = "This Houdini file is not a Shotgun Toolkit work file!"
@@ -720,7 +731,7 @@ class TkArnoldNodeHandler(object):
         """
 
         # Get relevant fields from the scene filename and contents
-        work_file_fields = self._get_hipfile_fields()
+        work_file_fields = self._get_hipfile_fields(node)
 
         if not work_file_fields:
             msg = "This Houdini file is not a Shotgun Toolkit work file!"
@@ -773,16 +784,26 @@ class TkArnoldNodeHandler(object):
         return self._output_profiles[output_profile_name]
 
 
-    def _get_hipfile_fields(self):
+    def _get_hipfile_fields(self, node):
         """Extract fields from current Houdini file using workfile template."""
 
-        current_file_path = hou.hipFile.path()
+        current_file_path = hou.hipFile.path() # NB could be the work file or the render backup file
 
         work_fields = {}
         work_file_template = self._app.get_template("work_file_template")
+
+        output_profile = self._get_output_profile(node)
+        render_backup_file_template = self._app.get_template_by_name(
+                        output_profile["output_backup_render_template"])
+
         if (work_file_template and 
             work_file_template.validate(current_file_path)):
             work_fields = work_file_template.get_fields(current_file_path)
+
+        # If the current hip file is a render backup, use the template of the render backup file
+        elif (render_backup_file_template and 
+            render_backup_file_template.validate(current_file_path)):
+            work_fields = render_backup_file_template.get_fields(current_file_path)
 
         return work_fields
 
